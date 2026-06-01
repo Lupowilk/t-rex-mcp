@@ -1,24 +1,32 @@
 use rmcp::{
-    ErrorData as McpError, RoleServer, ServerHandler,
-    handler::server::{
-        router::{prompt::PromptRouter, tool::ToolRouter},
-        wrapper::Parameters,
-    },
+    ErrorData as McpError, ServerHandler,
+    handler::server::router::tool::ToolRouter,
     model::*,
-    prompt, prompt_handler, prompt_router, schemars,
-    service::RequestContext,
-    task_handler,
-    task_manager::{OperationProcessor, OperationResultTransport},
     tool, tool_handler, tool_router,
 };
 
 
 
 fn main() {
-    println!("Hello, world!");
+    //
 }
 
 #[derive(Clone)]
 pub struct TRexServer {
     tool_router: ToolRouter<TRexServer>,
+}
+
+#[tool_router]
+impl TRexServer {
+
+    pub fn new() -> Self {
+        Self {
+            tool_router: Self::tool_router()
+        }
+    }
+
+    #[tool(description = "Ping-pong check for client")]
+    pub async fn ping(&self) -> Result<CallToolResult, McpError> {
+        Ok(CallToolResult::success(vec![Content::text("pong")]))
+    }
 }
