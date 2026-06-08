@@ -31,6 +31,11 @@ impl TRexServer {
     pub async fn ping(&self) -> Result<CallToolResult, McpError> {
         Ok(CallToolResult::success(vec![Content::text("pong")]))
     }
+
+    #[tool(description = "Return ETH current block number using Alchemy")]
+    pub async fn get_block_number(&self) -> Result<CallToolResult, McpError> {
+        Ok(CallToolResult::success(vec![Content::text("placeholder")]))
+    }
 }
 
 #[tool_handler]
