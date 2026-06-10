@@ -1,3 +1,4 @@
+use alloy::providers::{Provider, ProviderBuilder};
 use rmcp::{
     ErrorData as McpError, ServerHandler,ServiceExt,
     handler::server::router::tool::ToolRouter,
@@ -34,7 +35,17 @@ impl TRexServer {
 
     #[tool(description = "Return ETH current block number using Alchemy")]
     pub async fn get_block_number(&self) -> Result<CallToolResult, McpError> {
-        Ok(CallToolResult::success(vec![Content::text("placeholder")]))
+       // read env + Alchemy key
+       let alchemy_key = std::env::var("ALCHEMY_API_KEY")
+           .map_err(|e| McpError::internal_error(format!("missing ALCHEMY_API_KEY: {e}"), None))?;
+       let url = format!("https://eth-mainnet.g.alchemy.com/v2/{}", alchemy_key);
+       // import block
+       let provider = ProviderBuilder::new().connect(&url).await
+           .map_err(|e| McpError::internal_error(format!("Connection failure: {e}"), None))?;
+
+       let block_number = provider.get_block_number().await
+           .map_err(|e| McpError::internal_error(format!("Failed to fetch block number: {e}"), None))?;
+        Ok(CallToolResult::success(vec![Content::text(block_number.to_string())]))
     }
 }
 
