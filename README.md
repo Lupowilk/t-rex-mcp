@@ -1,17 +1,30 @@
-# Rust MCP Server for ERC-3643 compliance
-The repository contains a simple MCP server exposing ERC-3643 / T-REX compliance state as tools for an AI agent.
+# t-rex-mcp
+An MCP server in Rust exposing on-chain RWA compliance state as agent-callable tools.
+Supports ERC-3643 (T-REX) and ERC-7943 (uRWA).
 
 ## Why
-This serves as a training ground for the author, and no public MCP server exists for ERC-3643 today.
-ERC-3643 is the dominant institutional RWA tokenization standard with $32B+ tokenized per the ERC-3643 Association. We want to give agents the ability to reason about on-chain compliance.
+Compliance primitives — identity registries, claim topics, transfer restrictions,
+frozen balances — are readable on-chain but awkward to reason about. This makes them
+queryable by an AI agent.
 
-## Requirements
-- read-only, no writes
-- Ethereum mainnet only, no multichain
-- no custody integration
-- v0.1 will support 3 exemplar tools: `check_eligibility`, `read_identity_registry`, `list_claim_topics`
+ERC-3643 is the dominant framework for regulated securities tokens. ERC-7943 went
+Final (May 2026) as the neutral interface, sharing `canTransfer` semantics by design.
 
-## Links
-- ERC-3643 spec: https://eips.ethereum.org/EIPS/eip-3643
-- MCP: https://modelcontextprotocol.io
-- T-REX reference impl: https://github.com/TokenySolutions/T-REX
+No public MCP server for ERC-3643 that we're aware of (verified Sept 2026).
+
+## Scope
+Read-only. Ethereum mainnet only. MCP spec 2026-07-28 via rmcp 3.x.
+
+## Tools
+| Tool | Status |
+|---|---|
+| `ping` | working |
+| `get_block_number` | working |
+| `check_eligibility` | in progress |
+| `read_identity_registry` | planned |
+| `list_claim_topics` | planned |
+| `simulate_transfer` | v0.2 |
+| `query_transfer_restrictions` | v0.2 |
+
+## References
+- [ERC-3643](https://eips.ethereum.org/EIPS/eip-3643) · [ERC-7943](https://eips.ethereum.org/EIPS/eip-7943) · [T-REX](https://github.com/TokenySolutions/T-REX) · [MCP](https://modelcontextprotocol.io) · [rmcp](https://github.com/modelcontextprotocol/rust-sdk)
