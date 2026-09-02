@@ -1,11 +1,10 @@
 use alloy::providers::{Provider, ProviderBuilder};
 use rmcp::{
-    ErrorData as McpError, ServerHandler,ServiceExt,
+    ErrorData as McpError, ServerHandler, ServiceExt,
     handler::server::router::tool::ToolRouter,
     model::*,
     tool, tool_handler, tool_router, transport::stdio,
 };
-
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -21,7 +20,6 @@ pub struct TRexServer {
 
 #[tool_router]
 impl TRexServer {
-
     pub fn new() -> Self {
         Self {
             tool_router: Self::tool_router()
@@ -30,7 +28,7 @@ impl TRexServer {
 
     #[tool(description = "Ping-pong check for client")]
     pub async fn ping(&self) -> Result<CallToolResult, McpError> {
-        Ok(CallToolResult::success(vec![Content::text("pong")]))
+        Ok(CallToolResult::success(vec![ContentBlock::text("pong")]))
     }
 
     #[tool(description = "Return ETH current block number using Alchemy")]
@@ -42,10 +40,9 @@ impl TRexServer {
        // import block
        let provider = ProviderBuilder::new().connect(&url).await
            .map_err(|e| McpError::internal_error(format!("Connection failure: {e}"), None))?;
-
        let block_number = provider.get_block_number().await
            .map_err(|e| McpError::internal_error(format!("Failed to fetch block number: {e}"), None))?;
-        Ok(CallToolResult::success(vec![Content::text(block_number.to_string())]))
+        Ok(CallToolResult::success(vec![ContentBlock::text(block_number.to_string())]))
     }
 }
 
