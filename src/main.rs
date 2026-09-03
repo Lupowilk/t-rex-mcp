@@ -12,6 +12,11 @@ sol! {
     contract IToken{
         function compliance() external view returns (address);
     }
+
+    #[sol(rpc)]
+    contract ICompliance{
+        function canTransfer(address _from, address _to, uint256 _amount) external view returns (bool);
+    }
 }
 
 
