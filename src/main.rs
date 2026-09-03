@@ -1,10 +1,19 @@
-use alloy::providers::{Provider, ProviderBuilder};
+use alloy::{providers::{Provider, ProviderBuilder}, sol};
 use rmcp::{
     ErrorData as McpError, ServerHandler, ServiceExt,
     handler::server::router::tool::ToolRouter,
     model::*,
     tool, tool_handler, tool_router, transport::stdio,
 };
+
+
+sol! {
+    #[sol(rpc)]
+    contract IToken{
+        function compliance() external view returns (address);
+    }
+}
+
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
