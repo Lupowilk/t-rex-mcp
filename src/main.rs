@@ -1,10 +1,9 @@
 use alloy::{providers::{Provider, ProviderBuilder}, sol};
 use rmcp::{
-    ErrorData as McpError, ServerHandler, ServiceExt,
-    handler::server::router::tool::ToolRouter,
-    model::*,
-    tool, tool_handler, tool_router, transport::stdio,
+    ErrorData as McpError, ServerHandler, ServiceExt, handler::server::{router::tool::ToolRouter, wrapper::Parameters}, model::*, tool, tool_handler, tool_router, transport::stdio,
 };
+use schemars::JsonSchema;
+use serde::Deserialize;
 
 
 sol! {
@@ -17,6 +16,14 @@ sol! {
     contract ICompliance{
         function canTransfer(address _from, address _to, uint256 _amount) external view returns (bool);
     }
+}
+
+#[derive(Deserialize, JsonSchema)]
+pub struct EligibilityCheck {
+    token: String,
+    from: String,
+    to: String,
+    amount: String
 }
 
 
@@ -58,6 +65,12 @@ impl TRexServer {
            .map_err(|e| McpError::internal_error(format!("Failed to fetch block number: {e}"), None))?;
         Ok(CallToolResult::success(vec![ContentBlock::text(block_number.to_string())]))
     }
+
+    #[tool(description = "Checks for eligibility of the token contract")]
+    pub async fn check_token_eligibility(&self, tokendetails: Parameters<EligibilityCheck> ) -> Result<CallToolResult, McpError> {
+        Ok(CallToolResult::success(vec![ContentBlock::text("blabla")]))
+    }
+
 }
 
 #[tool_handler]
