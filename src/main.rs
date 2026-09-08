@@ -1,4 +1,4 @@
-use alloy::{primitives::Address, providers::{Provider, ProviderBuilder}, sol};
+use alloy::{primitives::{Address, U256}, providers::{Provider, ProviderBuilder}, sol};
 use rmcp::{
     ErrorData as McpError, ServerHandler, ServiceExt, handler::server::{router::tool::ToolRouter, wrapper::Parameters}, model::*, tool, tool_handler, tool_router, transport::stdio,
 };
@@ -70,6 +70,15 @@ impl TRexServer {
     pub async fn check_token_eligibility(&self, tokendetails: Parameters<EligibilityCheck> ) -> Result<CallToolResult, McpError> {
         let token_el = tokendetails.0.token.parse::<Address>()
             .map_err(|e| McpError::internal_error(format!("invalid token address: {e}"), None))?;
+
+        let from_el = tokendetails.0.from.parse::<Address>()
+            .map_err(|e| McpError::internal_error(format!("invalid speding address: {e}"), None))?;
+
+        let to_el = tokendetails.0.to.parse::<Address>()
+            .map_err(|e| McpError::internal_error(format!("invalid reciepient address: {e}"), None))?;
+
+        let amount_el = tokendetails.0.amount.parse::<U256>()
+            .map_err(|e| McpError::internal_error(format!("invalid amount: {e}"), None))?;
 
         Ok(CallToolResult::success(vec![ContentBlock::text("blabla")]))
     }
