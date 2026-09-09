@@ -1,0 +1,57 @@
+<svg width="680" height="640" viewBox="0 0 680 640" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica, Arial, sans-serif">
+  <rect x="30" y="30" width="250" height="280" rx="12" fill="none" stroke="#888780" stroke-width="1" stroke-dasharray="6 4"/>
+  <text x="42" y="50" font-size="12" fill="#5F5E5A">Client — Claude Desktop [macOS app]</text>
+
+  <rect x="50" y="64" width="210" height="70" rx="8" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text x="155" y="88" font-size="14" font-weight="bold" fill="#2C2C2A" text-anchor="middle">User</text>
+  <text x="155" y="106" font-size="12" fill="#5F5E5A" text-anchor="middle">[Person]</text>
+  <text x="155" y="122" font-size="12" fill="#5F5E5A" text-anchor="middle">Asks in plain English</text>
+
+  <line x1="155" y1="134" x2="155" y2="178" stroke="#5F5E5A" stroke-width="1.2"/>
+  <polygon points="155,188 150,177 160,177" fill="#5F5E5A"/>
+
+  <rect x="50" y="190" width="210" height="70" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+  <text x="155" y="214" font-size="14" font-weight="bold" fill="#26215C" text-anchor="middle">Claude</text>
+  <text x="155" y="232" font-size="12" fill="#534AB7" text-anchor="middle">[LLM]</text>
+  <text x="155" y="248" font-size="12" fill="#534AB7" text-anchor="middle">Decides tool call, fills args</text>
+
+  <rect x="30" y="360" width="250" height="140" rx="12" fill="none" stroke="#888780" stroke-width="1" stroke-dasharray="6 4"/>
+  <text x="42" y="380" font-size="12" fill="#5F5E5A">Server — t-rex-mcp</text>
+
+  <rect x="50" y="396" width="210" height="86" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+  <text x="155" y="420" font-size="14" font-weight="bold" fill="#26215C" text-anchor="middle">check_eligibility</text>
+  <text x="155" y="438" font-size="12" fill="#534AB7" text-anchor="middle">[Rust, rmcp, alloy]</text>
+  <text x="155" y="454" font-size="12" fill="#534AB7" text-anchor="middle">MCP tool over stdio,</text>
+  <text x="155" y="470" font-size="12" fill="#534AB7" text-anchor="middle">chains 2 read-only calls</text>
+
+  <line x1="155" y1="310" x2="155" y2="386" stroke="#5F5E5A" stroke-width="1.2"/>
+  <polygon points="155,396 150,385 160,385" fill="#5F5E5A"/>
+  <text x="167" y="340" font-size="12" fill="#5F5E5A">JSON-RPC / stdio</text>
+
+  <rect x="380" y="120" width="280" height="380" rx="12" fill="none" stroke="#888780" stroke-width="1" stroke-dasharray="6 4"/>
+  <text x="392" y="140" font-size="12" fill="#5F5E5A">Service — Ethereum mainnet</text>
+
+  <rect x="400" y="160" width="240" height="86" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+  <text x="520" y="184" font-size="14" font-weight="bold" fill="#04342C" text-anchor="middle">Token contract</text>
+  <text x="520" y="202" font-size="12" fill="#0F6E56" text-anchor="middle">[ERC-3643, Solidity, proxy]</text>
+  <text x="520" y="218" font-size="12" fill="#0F6E56" text-anchor="middle">Permissioned token;</text>
+  <text x="520" y="234" font-size="12" fill="#0F6E56" text-anchor="middle">compliance() → address</text>
+
+  <line x1="520" y1="246" x2="520" y2="324" stroke="#5F5E5A" stroke-width="1.2"/>
+  <polygon points="520,334 515,323 525,323" fill="#5F5E5A"/>
+  <text x="532" y="288" font-size="12" fill="#5F5E5A">address feeds call</text>
+
+  <rect x="400" y="334" width="240" height="86" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+  <text x="520" y="358" font-size="14" font-weight="bold" fill="#04342C" text-anchor="middle">Compliance contract</text>
+  <text x="520" y="376" font-size="12" fill="#0F6E56" text-anchor="middle">[Solidity, modular rules]</text>
+  <text x="520" y="392" font-size="12" fill="#0F6E56" text-anchor="middle">canTransfer(from,to,amt)</text>
+  <text x="520" y="408" font-size="12" fill="#0F6E56" text-anchor="middle">→ bool verdict</text>
+
+  <path d="M260 410 L320 410 L320 192 L388 192" fill="none" stroke="#7F77DD" stroke-width="1.4"/>
+  <polygon points="398,192 387,187 387,197" fill="#7F77DD"/>
+  <text x="320" y="176" font-size="12" fill="#534AB7" text-anchor="middle">1. eth_call via Alchemy</text>
+
+  <path d="M400 377 L350 377 L350 460 L276 460" fill="none" stroke="#1D9E75" stroke-width="1.4"/>
+  <polygon points="266,460 277,455 277,465" fill="#1D9E75"/>
+  <text x="350" y="482" font-size="12" fill="#0F6E56" text-anchor="middle">2. bool returns</text>
+</svg>

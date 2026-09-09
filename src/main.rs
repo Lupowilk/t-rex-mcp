@@ -1,10 +1,31 @@
-use alloy::providers::{Provider, ProviderBuilder};
+use alloy::{primitives::{Address, U256}, providers::{Provider, ProviderBuilder}, sol};
 use rmcp::{
-    ErrorData as McpError, ServerHandler, ServiceExt,
-    handler::server::router::tool::ToolRouter,
-    model::*,
-    tool, tool_handler, tool_router, transport::stdio,
+    ErrorData as McpError, ServerHandler, ServiceExt, handler::server::{router::tool::ToolRouter, wrapper::Parameters}, model::*, tool, tool_handler, tool_router, transport::stdio,
 };
+use schemars::JsonSchema;
+use serde::Deserialize;
+
+
+sol! {
+    #[sol(rpc)]
+    contract IToken{
+        function compliance() external view returns (address);
+    }
+
+    #[sol(rpc)]
+    contract ICompliance{
+        function canTransfer(address _from, address _to, uint256 _amount) external view returns (bool);
+    }
+}
+
+#[derive(Deserialize, JsonSchema)]
+pub struct EligibilityCheck {
+    token: String,
+    from: String,
+    to: String,
+    amount: String
+}
+
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -44,6 +65,37 @@ impl TRexServer {
            .map_err(|e| McpError::internal_error(format!("Failed to fetch block number: {e}"), None))?;
         Ok(CallToolResult::success(vec![ContentBlock::text(block_number.to_string())]))
     }
+
+    #[tool(description = "Checks for eligibility of the token contract")]
+    pub async fn check_token_eligibility(&self, tokendetails: Parameters<EligibilityCheck> ) -> Result<CallToolResult, McpError> {
+        let token_el = tokendetails.0.token.parse::<Address>()
+            .map_err(|e| McpError::internal_error(format!("invalid token address: {e}"), None))?;
+
+        let from_el = tokendetails.0.from.parse::<Address>()
+            .map_err(|e| McpError::internal_error(format!("invalid speding address: {e}"), None))?;
+
+        let to_el = tokendetails.0.to.parse::<Address>()
+            .map_err(|e| McpError::internal_error(format!("invalid reciepient address: {e}"), None))?;
+
+        let amount_el = tokendetails.0.amount.parse::<U256>()
+            .map_err(|e| McpError::internal_error(format!("invalid amount: {e}"), None))?;
+
+        let alchemy_key = std::env::var("ALCHEMY_API_KEY")
+            .map_err(|e| McpError::internal_error(format!("missing ALCHEMY_API_KEY: {e}"), None))?;
+        let url = format!("https://eth-mainnet.g.alchemy.com/v2/{}", alchemy_key);
+
+        let provider = ProviderBuilder::new().connect(&url).await
+            .map_err(|e| McpError::internal_error(format!("Connection failure: {e}"), None))?;
+
+        let compliance_address = IToken::new(token_el, &provider).compliance().call().await
+            .map_err(|e| McpError::internal_error(format!("No compliance address exists: {e}"), None))?;
+
+        let compliance_contract_check = ICompliance::new(compliance_address, &provider).canTransfer(from_el, to_el, amount_el).call().await
+            .map_err(|e| McpError::internal_error(format!("The contract is not compliant, {e}"), None))?;
+
+        Ok(CallToolResult::success(vec![ContentBlock::text(compliance_contract_check.to_string())]))
+    }
+
 }
 
 #[tool_handler]

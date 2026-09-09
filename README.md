@@ -26,5 +26,8 @@ Read-only. Ethereum mainnet only. MCP spec 2026-07-28 via rmcp 3.x.
 | `simulate_transfer` | v0.2 |
 | `query_transfer_restrictions` | v0.2 |
 
+## Architecture
+![check_eligibility dataflow](docs/architecture.svg)
+
 ## References
 - [ERC-3643](https://eips.ethereum.org/EIPS/eip-3643) · [ERC-7943](https://eips.ethereum.org/EIPS/eip-7943) · [T-REX](https://github.com/TokenySolutions/T-REX) · [MCP](https://modelcontextprotocol.io) · [rmcp](https://github.com/modelcontextprotocol/rust-sdk)
