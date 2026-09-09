@@ -80,7 +80,20 @@ impl TRexServer {
         let amount_el = tokendetails.0.amount.parse::<U256>()
             .map_err(|e| McpError::internal_error(format!("invalid amount: {e}"), None))?;
 
-        Ok(CallToolResult::success(vec![ContentBlock::text("blabla")]))
+        let alchemy_key = std::env::var("ALCHEMY_API_KEY")
+            .map_err(|e| McpError::internal_error(format!("missing ALCHEMY_API_KEY: {e}"), None))?;
+        let url = format!("https://eth-mainnet.g.alchemy.com/v2/{}", alchemy_key);
+
+        let provider = ProviderBuilder::new().connect(&url).await
+            .map_err(|e| McpError::internal_error(format!("Connection failure: {e}"), None))?;
+
+        let compliance_address = IToken::new(token_el, &provider).compliance().call().await
+            .map_err(|e| McpError::internal_error(format!("No compliance address exists: {e}"), None))?;
+
+        let compliance_contract_check = ICompliance::new(compliance_address, &provider).canTransfer(from_el, to_el, amount_el).call().await
+            .map_err(|e| McpError::internal_error(format!("The contract is not compliant, {e}"), None))?;
+
+        Ok(CallToolResult::success(vec![ContentBlock::text(compliance_contract_check.to_string())]))
     }
 
 }
