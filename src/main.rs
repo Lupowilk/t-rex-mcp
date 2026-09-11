@@ -10,12 +10,18 @@ sol! {
     #[sol(rpc)]
     contract IToken{
         function compliance() external view returns (address);
+        function identityRegistry() external view returns (address);
     }
 
     #[sol(rpc)]
     contract ICompliance{
         function canTransfer(address _from, address _to, uint256 _amount) external view returns (bool);
     }
+
+     #[sol(rpc)]
+     contract IIdentityRegistry{
+         function identity(address _userAddress) external view returns (address);
+     }
 }
 
 #[derive(Deserialize, JsonSchema)]
@@ -26,6 +32,11 @@ pub struct EligibilityCheck {
     amount: String
 }
 
+#[derive(Deserialize, JsonSchema)]
+pub struct IdentityCheck {
+    token: String,
+    holder: String
+}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -82,6 +93,7 @@ impl TRexServer {
 
         let alchemy_key = std::env::var("ALCHEMY_API_KEY")
             .map_err(|e| McpError::internal_error(format!("missing ALCHEMY_API_KEY: {e}"), None))?;
+
         let url = format!("https://eth-mainnet.g.alchemy.com/v2/{}", alchemy_key);
 
         let provider = ProviderBuilder::new().connect(&url).await
@@ -96,6 +108,30 @@ impl TRexServer {
         Ok(CallToolResult::success(vec![ContentBlock::text(compliance_contract_check.to_string())]))
     }
 
+    #[tool(description = "looks up a holder's ONCHAINID identity contract address in the token's Identity Registry.")]
+    pub async fn read_identity_registry(&self, identitydetails: Parameters<IdentityCheck>) -> Result<CallToolResult, McpError> {
+        let onchainid_check_contract = identitydetails.0.token.parse::<Address>()
+            .map_err(|e| McpError::internal_error(format!("invalid token address, {e}"), None))?;
+
+        let onchain_holder_check = identitydetails.0.holder.parse::<Address>()
+            .map_err(|e| McpError::internal_error(format!("invalid holder address, {e}"), None))?;
+
+        let alchemy_key = std::env::var("ALCHEMY_API_KEY")
+            .map_err(|e| McpError::internal_error(format!("missing ALCHEMY_API_KEY: {e}"), None))?;
+
+        let url = format!("https://eth-mainnet.g.alchemy.com/v2/{}", alchemy_key);
+
+        let provider = ProviderBuilder::new().connect(&url).await
+            .map_err(|e| McpError::internal_error(format!("Connection failure: {e}"), None))?;
+
+        let registry_address_call = IToken::new(onchainid_check_contract, &provider).identityRegistry().call().await
+            .map_err(|e| McpError::internal_error(format!("failed to read identity registry, {e}"), None))?;
+
+        let registry_identity_call = IIdentityRegistry::new(registry_address_call, &provider).identity(onchain_holder_check).call().await
+            .map_err(|e| McpError::internal_error(format!("failed to read identity registry, {e}"), None))?;
+
+        Ok(CallToolResult::success(vec![ContentBlock::text(registry_identity_call.to_string())]))
+        }
 }
 
 #[tool_handler]
