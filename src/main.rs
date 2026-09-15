@@ -20,8 +20,15 @@ sol! {
 
      #[sol(rpc)]
      contract IIdentityRegistry{
-         function identity(address _userAddress) external view returns (address);
+        function identity(address _userAddress) external view returns (address);
+        function topicsRegistry() external view returns (address);
      }
+
+     #[sol(rpc)]
+     contract IClaimTopicsRegistry {
+         function getClaimTopics() external view returns (uint256[] memory);
+     }
+
 }
 
 #[derive(Deserialize, JsonSchema)]
