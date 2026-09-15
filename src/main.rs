@@ -20,8 +20,15 @@ sol! {
 
      #[sol(rpc)]
      contract IIdentityRegistry{
-         function identity(address _userAddress) external view returns (address);
+        function identity(address _userAddress) external view returns (address);
+        function topicsRegistry() external view returns (address);
      }
+
+     #[sol(rpc)]
+     contract IClaimTopicsRegistry {
+         function getClaimTopics() external view returns (uint256[] memory);
+     }
+
 }
 
 #[derive(Deserialize, JsonSchema)]
@@ -36,6 +43,12 @@ pub struct EligibilityCheck {
 pub struct IdentityCheck {
     token: String,
     holder: String
+}
+
+
+#[derive(Deserialize, JsonSchema)]
+pub struct ClaimTopics {
+    token: String
 }
 
 #[tokio::main]
@@ -132,6 +145,35 @@ impl TRexServer {
 
         Ok(CallToolResult::success(vec![ContentBlock::text(registry_identity_call.to_string())]))
         }
+
+    #[tool(description = "looks into the claim topics required by a token's IdentityRegistry")]
+    pub async fn list_claim_topics(&self, claimdetails: Parameters<ClaimTopics>) -> Result<CallToolResult, McpError> {
+            let token_address = claimdetails.0.token.parse::<Address>()
+                .map_err(|e| McpError::internal_error(format!("invalid token address, {e}"), None))?;
+
+            let alchemy_key = std::env::var("ALCHEMY_API_KEY")
+                .map_err(|e| McpError::internal_error(format!("missing ALCHEMY_API_KEY: {e}"), None))?;
+
+            let url = format!("https://eth-mainnet.g.alchemy.com/v2/{}", alchemy_key);
+
+            let provider = ProviderBuilder::new().connect(&url).await
+                .map_err(|e| McpError::internal_error(format!("Connection failure: {e}"), None))?;
+
+            let registry_address_call = IToken::new(token_address, &provider).identityRegistry().call().await
+                .map_err(|e| McpError::internal_error(format!("failed to read identity registry, {e}"), None))?;
+
+            let topics_registry_address = IIdentityRegistry::new(registry_address_call, &provider).topicsRegistry().call().await
+                .map_err(|e| McpError::internal_error(format!("failed to read topics registry, {e}"), None))?;
+
+            let read_topics_registry = IClaimTopicsRegistry::new(topics_registry_address, &provider).getClaimTopics().call().await
+                .map_err(|e| McpError::internal_error(format!("failed to read topics registry, {e}"), None))?;
+
+            let topics: Vec<String> = read_topics_registry.iter().map(|t| t.to_string()).collect();
+
+            Ok(CallToolResult::success(vec![ContentBlock::text(topics.join(","))]))
+        }
+
+
 }
 
 #[tool_handler]
