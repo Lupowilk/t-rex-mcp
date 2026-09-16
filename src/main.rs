@@ -93,30 +93,30 @@ impl TRexServer {
     #[tool(description = "Checks for eligibility of the token contract")]
     pub async fn check_token_eligibility(&self, tokendetails: Parameters<EligibilityCheck> ) -> Result<CallToolResult, McpError> {
         let token_el = tokendetails.0.token.parse::<Address>()
-            .map_err(|e| McpError::internal_error(format!("invalid token address: {e}"), None))?;
+            .map_err(|e| McpError::internal_error(format!("Invalid token address (expected 0x-prefixed hex): {e}"), None))?;
 
         let from_el = tokendetails.0.from.parse::<Address>()
-            .map_err(|e| McpError::internal_error(format!("invalid sending address: {e}"), None))?;
+            .map_err(|e| McpError::internal_error(format!("Invalid sender address (expected 0x-prefixed hex): {e}"), None))?;
 
         let to_el = tokendetails.0.to.parse::<Address>()
-            .map_err(|e| McpError::internal_error(format!("invalid recipient address: {e}"), None))?;
+            .map_err(|e| McpError::internal_error(format!("Invalid recipient address (expected 0x-prefixed hex): {e}"), None))?;
 
         let amount_el = tokendetails.0.amount.parse::<U256>()
-            .map_err(|e| McpError::internal_error(format!("invalid amount: {e}"), None))?;
+            .map_err(|e| McpError::internal_error(format!("Invalid amount (expected a whole number in base units): {e}"), None))?;
 
         let alchemy_key = std::env::var("ALCHEMY_API_KEY")
-            .map_err(|e| McpError::internal_error(format!("missing ALCHEMY_API_KEY: {e}"), None))?;
+            .map_err(|e| McpError::internal_error(format!("Server is not configured (ALCHEMY_API_KEY is missing): {e}"), None))?;
 
         let url = format!("https://eth-mainnet.g.alchemy.com/v2/{}", alchemy_key);
 
         let provider = ProviderBuilder::new().connect(&url).await
-            .map_err(|e| McpError::internal_error(format!("Connection failure: {e}"), None))?;
+            .map_err(|e| McpError::internal_error(format!("Could not set up the Ethereum RPC client (invalid RPC URL): {e}"), None))?;
 
         let compliance_address = IToken::new(token_el, &provider).compliance().call().await
-            .map_err(|e| McpError::internal_error(format!("No compliance address exists: {e}"), None))?;
+            .map_err(|e| McpError::internal_error(format!("Could not read the token's compliance contract (compliance() call failed: token may not be ERC-3643, or the RPC/API key is unreachable): {e}"), None))?;
 
         let compliance_contract_check = ICompliance::new(compliance_address, &provider).canTransfer(from_el, to_el, amount_el).call().await
-            .map_err(|e| McpError::internal_error(format!("The contract is not compliant, {e}"), None))?;
+            .map_err(|e| McpError::internal_error(format!("Could not check transfer eligibility (compliance canTransfer call failed): {e}"), None))?;
 
         Ok(CallToolResult::success(vec![ContentBlock::text(compliance_contract_check.to_string())]))
     }
