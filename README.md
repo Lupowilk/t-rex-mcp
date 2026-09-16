@@ -1,6 +1,6 @@
 # t-rex-mcp
 An MCP server in Rust exposing on-chain RWA compliance state as agent-callable tools.
-Currenlty supports ERC-3643 (T-REX). ERC-7943 (uRWA) support is planned.
+Currently supports ERC-3643 (T-REX). ERC-7943 (uRWA) support is planned.
 
 ## Why
 Compliance primitives like identity registries, claim topics, transfer restrictions, and frozen balances are readable on-chain but awkward to reason about. This server makes them queryable by an AI agent.
@@ -9,7 +9,7 @@ ERC-3643 is the dominant framework for regulated securities tokens. ERC-7943 wen
 
 No public MCP server for ERC-3643 that we're aware of (verified Sept 2026).
 
-## Requirements
+## Scope
 Read-only. Ethereum mainnet only. stdio transport. MCP spec 2026-07-28 via rmcp 3.x.
 
 ## Tools
