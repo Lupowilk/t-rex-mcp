@@ -96,10 +96,10 @@ impl TRexServer {
             .map_err(|e| McpError::internal_error(format!("invalid token address: {e}"), None))?;
 
         let from_el = tokendetails.0.from.parse::<Address>()
-            .map_err(|e| McpError::internal_error(format!("invalid speding address: {e}"), None))?;
+            .map_err(|e| McpError::internal_error(format!("invalid sending address: {e}"), None))?;
 
         let to_el = tokendetails.0.to.parse::<Address>()
-            .map_err(|e| McpError::internal_error(format!("invalid reciepient address: {e}"), None))?;
+            .map_err(|e| McpError::internal_error(format!("invalid recipient address: {e}"), None))?;
 
         let amount_el = tokendetails.0.amount.parse::<U256>()
             .map_err(|e| McpError::internal_error(format!("invalid amount: {e}"), None))?;
