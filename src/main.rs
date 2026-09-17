@@ -124,24 +124,24 @@ impl TRexServer {
     #[tool(description = "looks up a holder's ONCHAINID identity contract address in the token's Identity Registry.")]
     pub async fn read_identity_registry(&self, identitydetails: Parameters<IdentityCheck>) -> Result<CallToolResult, McpError> {
         let onchainid_check_contract = identitydetails.0.token.parse::<Address>()
-            .map_err(|e| McpError::internal_error(format!("invalid token address, {e}"), None))?;
+            .map_err(|e| McpError::internal_error(format!("Invalid token address (expected 0x-prefixed hex): {e}"), None))?;
 
         let onchain_holder_check = identitydetails.0.holder.parse::<Address>()
-            .map_err(|e| McpError::internal_error(format!("invalid holder address, {e}"), None))?;
+            .map_err(|e| McpError::internal_error(format!("Invalid holder address (expected 0x-prefixed hex): {e}"), None))?;
 
         let alchemy_key = std::env::var("ALCHEMY_API_KEY")
-            .map_err(|e| McpError::internal_error(format!("missing ALCHEMY_API_KEY: {e}"), None))?;
+            .map_err(|e| McpError::internal_error(format!("Server is not configured (ALCHEMY_API_KEY is missing): {e}"), None))?;
 
         let url = format!("https://eth-mainnet.g.alchemy.com/v2/{}", alchemy_key);
 
         let provider = ProviderBuilder::new().connect(&url).await
-            .map_err(|e| McpError::internal_error(format!("Connection failure: {e}"), None))?;
+            .map_err(|e| McpError::internal_error(format!("Could not set up the Ethereum RPC client (invalid RPC URL): {e}"), None))?;
 
         let registry_address_call = IToken::new(onchainid_check_contract, &provider).identityRegistry().call().await
-            .map_err(|e| McpError::internal_error(format!("failed to read identity registry, {e}"), None))?;
+            .map_err(|e| McpError::internal_error(format!("Could not read the token's identity registry address (identityRegistry() call failed: token may not be ERC-3643, or the RPC/API key is unreachable): {e}"), None))?;
 
         let registry_identity_call = IIdentityRegistry::new(registry_address_call, &provider).identity(onchain_holder_check).call().await
-            .map_err(|e| McpError::internal_error(format!("failed to read identity registry, {e}"), None))?;
+            .map_err(|e| McpError::internal_error(format!("Could not read the holder's ONCHAINID (identity() call failed: identity registry call reverted, or the RPC/API key is unreachable): {e}"), None))?;
 
         Ok(CallToolResult::success(vec![ContentBlock::text(registry_identity_call.to_string())]))
         }
