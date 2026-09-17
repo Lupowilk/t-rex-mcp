@@ -148,29 +148,29 @@ impl TRexServer {
 
     #[tool(description = "looks into the claim topics required by a token's IdentityRegistry")]
     pub async fn list_claim_topics(&self, claimdetails: Parameters<ClaimTopics>) -> Result<CallToolResult, McpError> {
-            let token_address = claimdetails.0.token.parse::<Address>()
-                .map_err(|e| McpError::internal_error(format!("invalid token address, {e}"), None))?;
+        let token_address = claimdetails.0.token.parse::<Address>()
+            .map_err(|e| McpError::internal_error(format!("Invalid token address (expected 0x-prefixed hex): {e}"), None))?;
 
-            let alchemy_key = std::env::var("ALCHEMY_API_KEY")
-                .map_err(|e| McpError::internal_error(format!("missing ALCHEMY_API_KEY: {e}"), None))?;
+        let alchemy_key = std::env::var("ALCHEMY_API_KEY")
+            .map_err(|e| McpError::internal_error(format!("Server is not configured (ALCHEMY_API_KEY is missing): {e}"), None))?;
 
-            let url = format!("https://eth-mainnet.g.alchemy.com/v2/{}", alchemy_key);
+        let url = format!("https://eth-mainnet.g.alchemy.com/v2/{}", alchemy_key);
 
-            let provider = ProviderBuilder::new().connect(&url).await
-                .map_err(|e| McpError::internal_error(format!("Connection failure: {e}"), None))?;
+        let provider = ProviderBuilder::new().connect(&url).await
+            .map_err(|e| McpError::internal_error(format!("Could not set up the Ethereum RPC client (invalid RPC URL): {e}"), None))?;
 
-            let registry_address_call = IToken::new(token_address, &provider).identityRegistry().call().await
-                .map_err(|e| McpError::internal_error(format!("failed to read identity registry, {e}"), None))?;
+        let registry_address_call = IToken::new(token_address, &provider).identityRegistry().call().await
+            .map_err(|e| McpError::internal_error(format!("Could not read the token's identity registry address (identityRegistry() call failed: token may not be ERC-3643, or the RPC/API key is unreachable): {e}"), None))?;
 
-            let topics_registry_address = IIdentityRegistry::new(registry_address_call, &provider).topicsRegistry().call().await
-                .map_err(|e| McpError::internal_error(format!("failed to read topics registry, {e}"), None))?;
+        let topics_registry_address = IIdentityRegistry::new(registry_address_call, &provider).topicsRegistry().call().await
+            .map_err(|e| McpError::internal_error(format!("Could not read the claim topics registry address (topicsRegistry() call failed: identity registry call reverted, or the RPC/API key is unreachable): {e}"), None))?;
 
-            let read_topics_registry = IClaimTopicsRegistry::new(topics_registry_address, &provider).getClaimTopics().call().await
-                .map_err(|e| McpError::internal_error(format!("failed to read topics registry, {e}"), None))?;
+        let read_topics_registry = IClaimTopicsRegistry::new(topics_registry_address, &provider).getClaimTopics().call().await
+            .map_err(|e| McpError::internal_error(format!("Could not read the required claim topics (getClaimTopics() call failed: claim topics registry call reverted, or the RPC/API key is unreachable): {e}"), None))?;
 
-            let topics: Vec<String> = read_topics_registry.iter().map(|t| t.to_string()).collect();
+        let topics: Vec<String> = read_topics_registry.iter().map(|t| t.to_string()).collect();
 
-            Ok(CallToolResult::success(vec![ContentBlock::text(topics.join(","))]))
+        Ok(CallToolResult::success(vec![ContentBlock::text(topics.join(","))]))
         }
 
 
