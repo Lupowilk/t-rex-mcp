@@ -118,6 +118,7 @@ impl TRexServer {
         let compliance_contract_check = ICompliance::new(compliance_address, &provider).canTransfer(from_el, to_el, amount_el).call().await
             .map_err(|e| McpError::internal_error(format!("Could not check transfer eligibility (compliance canTransfer call failed): {e}"), None))?;
 
+
         Ok(CallToolResult::success(vec![ContentBlock::text(compliance_contract_check.to_string())]))
     }
 
@@ -143,6 +144,9 @@ impl TRexServer {
         let registry_identity_call = IIdentityRegistry::new(registry_address_call, &provider).identity(onchain_holder_check).call().await
             .map_err(|e| McpError::internal_error(format!("Could not read the holder's ONCHAINID (identity() call failed: identity registry call reverted, or the RPC/API key is unreachable): {e}"), None))?;
 
+        if registry_identity_call == Address::ZERO {
+            return Ok(CallToolResult::success(vec![ContentBlock::text("holder is not registered in this token's identity registry")]));
+        }
         Ok(CallToolResult::success(vec![ContentBlock::text(registry_identity_call.to_string())]))
         }
 
