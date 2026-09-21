@@ -93,16 +93,16 @@ impl TRexServer {
     #[tool(description = "Checks for eligibility of the token contract")]
     pub async fn check_token_eligibility(&self, tokendetails: Parameters<EligibilityCheck> ) -> Result<CallToolResult, McpError> {
         let token_el = tokendetails.0.token.parse::<Address>()
-            .map_err(|e| McpError::internal_error(format!("Invalid token address (expected 0x-prefixed hex): {e}"), None))?;
+            .map_err(|e| McpError::invalid_params(format!("Invalid token address (expected 0x-prefixed hex): {e}"), None))?;
 
         let from_el = tokendetails.0.from.parse::<Address>()
-            .map_err(|e| McpError::internal_error(format!("Invalid sender address (expected 0x-prefixed hex): {e}"), None))?;
+            .map_err(|e| McpError::invalid_params(format!("Invalid sender address (expected 0x-prefixed hex): {e}"), None))?;
 
         let to_el = tokendetails.0.to.parse::<Address>()
-            .map_err(|e| McpError::internal_error(format!("Invalid recipient address (expected 0x-prefixed hex): {e}"), None))?;
+            .map_err(|e| McpError::invalid_params(format!("Invalid recipient address (expected 0x-prefixed hex): {e}"), None))?;
 
         let amount_el = tokendetails.0.amount.parse::<U256>()
-            .map_err(|e| McpError::internal_error(format!("Invalid amount (expected a whole number in base units): {e}"), None))?;
+            .map_err(|e| McpError::invalid_params(format!("Invalid amount (expected a whole number in base units): {e}"), None))?;
 
         let alchemy_key = std::env::var("ALCHEMY_API_KEY")
             .map_err(|e| McpError::internal_error(format!("Server is not configured (ALCHEMY_API_KEY is missing): {e}"), None))?;
@@ -124,10 +124,10 @@ impl TRexServer {
     #[tool(description = "looks up a holder's ONCHAINID identity contract address in the token's Identity Registry.")]
     pub async fn read_identity_registry(&self, identitydetails: Parameters<IdentityCheck>) -> Result<CallToolResult, McpError> {
         let onchainid_check_contract = identitydetails.0.token.parse::<Address>()
-            .map_err(|e| McpError::internal_error(format!("Invalid token address (expected 0x-prefixed hex): {e}"), None))?;
+            .map_err(|e| McpError::invalid_params(format!("Invalid token address (expected 0x-prefixed hex): {e}"), None))?;
 
         let onchain_holder_check = identitydetails.0.holder.parse::<Address>()
-            .map_err(|e| McpError::internal_error(format!("Invalid holder address (expected 0x-prefixed hex): {e}"), None))?;
+            .map_err(|e| McpError::invalid_params(format!("Invalid holder address (expected 0x-prefixed hex): {e}"), None))?;
 
         let alchemy_key = std::env::var("ALCHEMY_API_KEY")
             .map_err(|e| McpError::internal_error(format!("Server is not configured (ALCHEMY_API_KEY is missing): {e}"), None))?;
@@ -149,7 +149,7 @@ impl TRexServer {
     #[tool(description = "looks into the claim topics required by a token's IdentityRegistry")]
     pub async fn list_claim_topics(&self, claimdetails: Parameters<ClaimTopics>) -> Result<CallToolResult, McpError> {
         let token_address = claimdetails.0.token.parse::<Address>()
-            .map_err(|e| McpError::internal_error(format!("Invalid token address (expected 0x-prefixed hex): {e}"), None))?;
+            .map_err(|e| McpError::invalid_params(format!("Invalid token address (expected 0x-prefixed hex): {e}"), None))?;
 
         let alchemy_key = std::env::var("ALCHEMY_API_KEY")
             .map_err(|e| McpError::internal_error(format!("Server is not configured (ALCHEMY_API_KEY is missing): {e}"), None))?;
