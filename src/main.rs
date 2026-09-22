@@ -33,21 +33,27 @@ sol! {
 
 #[derive(Deserialize, JsonSchema)]
 pub struct EligibilityCheck {
+    #[schemars(description = "ERC-3643 token contract address, 0x-prefixed hex")]
     token: String,
+    #[schemars(description = "Sender wallet address, 0x-prefixed hex")]
     from: String,
+    #[schemars(description = "Receiver wallet address, 0x-prefixed hex")]
     to: String,
+    #[schemars(description = "Transfer amount as a whole number in the token's raw base units (smallest unit, no decimals applied)")]
     amount: String
 }
 
 #[derive(Deserialize, JsonSchema)]
 pub struct IdentityCheck {
+    #[schemars(description = "ERC-3643 token contract address, 0x-prefixed hex")]
     token: String,
+    #[schemars(description = "Holder wallet address to look up in the token's identity registry, 0x-prefixed hex")]
     holder: String
 }
 
-
 #[derive(Deserialize, JsonSchema)]
 pub struct ClaimTopics {
+    #[schemars(description = "ERC-3643 token contract address, 0x-prefixed hex")]
     token: String
 }
 
