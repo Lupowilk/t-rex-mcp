@@ -18,12 +18,22 @@ Read-only. Ethereum mainnet only. stdio transport. MCP spec 2026-07-28 via rmcp 
 | `ping` | none | `"pong"` | working |
 | `get_block_number` | none | latest mainnet block number | working |
 | `check_token_eligibility` | `token`, `from`, `to`, `amount` | `true`/`false` from the token's compliance contract (`canTransfer`) | working |
-| `read_identity_registry` | `token`, `holder` | holder's ONCHAINID address | working |
+| `read_identity_registry` | `token`, `holder` | holder's ONCHAINID address, or `holder is not registered in this token's identity registry` | working |
 | `list_claim_topics` | `token` | comma-separated claim topic IDs required by the token | working |
 | `simulate_transfer` | | | v0.2 |
 | `query_transfer_restrictions` | | | v0.2 |
 
 All inputs are strings. Addresses are `0x…` hex. `amount` is a whole number in the token's smallest unit (no decimals applied).
+
+### Limitations of `check_token_eligibility`
+It asks only the token's compliance contract (`canTransfer`). Those rules vary by token.
+A real T-REX transfer also checks things this tool does **not**:
+- whether the recipient is verified in the identity registry
+- whether either wallet, or the tokens, are frozen
+- whether the token is paused
+- whether the sender has enough balance
+
+So `true` means "compliance rules allow it", not "the transfer will succeed". The contract also does not say *which* rule caused a `false`.
 
 ## Quick start guide
 
