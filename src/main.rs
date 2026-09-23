@@ -83,21 +83,25 @@ impl TRexServer {
         Ok(CallToolResult::success(vec![ContentBlock::text("pong")]))
     }
 
-    #[tool(description = "Return ETH current block number using Alchemy")]
+        #[tool(description = "Returns the current Ethereum mainnet block number as an object with a block_number field.")]
     pub async fn get_block_number(&self) -> Result<CallToolResult, McpError> {
        // read env + Alchemy key
        let alchemy_key = std::env::var("ALCHEMY_API_KEY")
            .map_err(|e| McpError::internal_error(format!("missing ALCHEMY_API_KEY: {e}"), None))?;
+
        let url = format!("https://eth-mainnet.g.alchemy.com/v2/{}", alchemy_key);
+
        // import block
        let provider = ProviderBuilder::new().connect(&url).await
            .map_err(|e| McpError::internal_error(format!("Connection failure: {e}"), None))?;
+
        let block_number = provider.get_block_number().await
            .map_err(|e| McpError::internal_error(format!("Failed to fetch block number: {e}"), None))?;
-        Ok(CallToolResult::success(vec![ContentBlock::text(block_number.to_string())]))
+
+       Ok(CallToolResult::structured(json!({ "block_number": block_number })))
     }
 
-    #[tool(description = "Checks whether a transfer passes the token's ERC-3643 compliance contract (canTransfer). Returns true or false. It checks the compliance rules (e.g. country restrictions, transfer limits), but does not check whether the recipient is verified in the identity registry, whether either wallet is frozen, whether the token is paused, or whether the sender has enough balance, so true does not guarantee the transfer will succeed. Amount is in raw base units.")]
+    #[tool(description = "Checks whether a transfer passes the token's ERC-3643 compliance contract (canTransfer). Returns an object with a can_transfer boolean. It checks the compliance rules (e.g. country restrictions, transfer limits), but does not check whether the recipient is verified in the identity registry, whether either wallet is frozen, whether the token is paused, or whether the sender has enough balance, so true does not guarantee the transfer will succeed. Amount is in raw base units.")]
     pub async fn check_token_eligibility(&self, tokendetails: Parameters<EligibilityCheck> ) -> Result<CallToolResult, McpError> {
         let token_el = tokendetails.0.token.parse::<Address>()
             .map_err(|e| McpError::invalid_params(format!("Invalid token address (expected 0x-prefixed hex): {e}"), None))?;
@@ -126,7 +130,7 @@ impl TRexServer {
             .map_err(|e| McpError::internal_error(format!("Could not check transfer eligibility (compliance canTransfer call failed): {e}"), None))?;
 
 
-        Ok(CallToolResult::success(vec![ContentBlock::text(compliance_contract_check.to_string())]))
+                Ok(CallToolResult::structured(json!({ "can_transfer": compliance_contract_check })))
     }
 
     #[tool(description = "looks up a holder's ONCHAINID identity contract address in the token's Identity Registry.")]
@@ -152,9 +156,9 @@ impl TRexServer {
             .map_err(|e| McpError::internal_error(format!("Could not read the holder's ONCHAINID (identity() call failed: identity registry call reverted, or the RPC/API key is unreachable): {e}"), None))?;
 
         if registry_identity_call == Address::ZERO {
-            return Ok(CallToolResult::success(vec![ContentBlock::text("holder is not registered in this token's identity registry")]));
+            return Ok(CallToolResult::structured(json!({ "registered": false, "onchainid": null })));
         }
-        Ok(CallToolResult::success(vec![ContentBlock::text(registry_identity_call.to_string())]))
+        Ok(CallToolResult::structured(json!({ "registered": true, "onchainid": registry_identity_call.to_string() })))
         }
 
     #[tool(description = "looks into the claim topics required by a token's IdentityRegistry")]
