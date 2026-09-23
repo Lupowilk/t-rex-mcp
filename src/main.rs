@@ -4,6 +4,7 @@ use rmcp::{
 };
 use schemars::JsonSchema;
 use serde::Deserialize;
+use serde_json::json;
 
 
 sol! {
@@ -96,7 +97,7 @@ impl TRexServer {
         Ok(CallToolResult::success(vec![ContentBlock::text(block_number.to_string())]))
     }
 
- #[tool(description = "Checks whether a transfer passes the token's ERC-3643 compliance contract (canTransfer). Returns true or false. It checks the compliance rules (e.g. country restrictions, transfer limits), but does not check whether the recipient is verified in the identity registry, whether either wallet is frozen, whether the token is paused, or whether the sender has enough balance, so true does not guarantee the transfer will succeed. Amount is in raw base units.")]
+    #[tool(description = "Checks whether a transfer passes the token's ERC-3643 compliance contract (canTransfer). Returns true or false. It checks the compliance rules (e.g. country restrictions, transfer limits), but does not check whether the recipient is verified in the identity registry, whether either wallet is frozen, whether the token is paused, or whether the sender has enough balance, so true does not guarantee the transfer will succeed. Amount is in raw base units.")]
     pub async fn check_token_eligibility(&self, tokendetails: Parameters<EligibilityCheck> ) -> Result<CallToolResult, McpError> {
         let token_el = tokendetails.0.token.parse::<Address>()
             .map_err(|e| McpError::invalid_params(format!("Invalid token address (expected 0x-prefixed hex): {e}"), None))?;
@@ -180,7 +181,7 @@ impl TRexServer {
 
         let topics: Vec<String> = read_topics_registry.iter().map(|t| t.to_string()).collect();
 
-        Ok(CallToolResult::success(vec![ContentBlock::text(topics.join(","))]))
+        Ok(CallToolResult::structured(json!({"topics": topics })))
         }
 
 
