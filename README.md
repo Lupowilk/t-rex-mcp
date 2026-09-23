@@ -15,15 +15,27 @@ Read-only. Ethereum mainnet only. stdio transport. MCP spec 2026-07-28 via rmcp 
 ## Tools
 | Tool | Inputs | Returns | Status |
 |---|---|---|---|
-| `ping` | none | `"pong"` | working |
-| `get_block_number` | none | latest mainnet block number | working |
-| `check_token_eligibility` | `token`, `from`, `to`, `amount` | `true`/`false` from the token's compliance contract (`canTransfer`) | working |
-| `read_identity_registry` | `token`, `holder` | holder's ONCHAINID address | working |
-| `list_claim_topics` | `token` | comma-separated claim topic IDs required by the token | working |
+| `ping` | none | `"pong"` (text) | working |
+| `get_block_number` | none | `{"block_number": <latest mainnet block>}` | working |
+| `check_token_eligibility` | `token`, `from`, `to`, `amount` | `{"can_transfer": true}` | working |
+| `read_identity_registry` | `token`, `holder` | `{"registered": true, "onchainid": "0x7714…"}`, or `{"registered": false, "onchainid": null}` | working |
+| `list_claim_topics` | `token` | `{"topics": ["10101010000101"]}` | working |
 | `simulate_transfer` | | | v0.2 |
 | `query_transfer_restrictions` | | | v0.2 |
 
 All inputs are strings. Addresses are `0x…` hex. `amount` is a whole number in the token's smallest unit (no decimals applied).
+
+Results come back as `structuredContent`, a JSON object. Claim topic IDs are strings.
+
+### Limitations of `check_token_eligibility`
+It asks only the token's compliance contract (`canTransfer`). Those rules vary by token.
+A real T-REX transfer also checks things this tool does **not**:
+- whether the recipient is verified in the identity registry
+- whether either wallet, or the tokens, are frozen
+- whether the token is paused
+- whether the sender has enough balance
+
+So `can_transfer: true` means "compliance rules allow it", not "the transfer will succeed". The contract also does not say *which* rule caused a `false`.
 
 ## Quick start guide
 
