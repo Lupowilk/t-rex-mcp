@@ -13,7 +13,7 @@ Initial release. Read-only MCP server exposing ERC-3643 (T-REX) compliance state
 - `check_token_eligibility` — runs the token's compliance contract `canTransfer(from, to, amount)`.
 - `read_identity_registry` — holder's ONCHAINID in the token's Identity Registry.
 - `list_claim_topics` — claim topics a token requires.
-- Prebuilt macOS binary attached to the release.
+- Prebuilt binaries attached to the release: macOS (Apple Silicon) and Linux (x86_64), as `.tar.gz`.
 
 ### Notes
 

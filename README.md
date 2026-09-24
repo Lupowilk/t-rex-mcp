@@ -27,22 +27,27 @@ All inputs are strings. Addresses are `0x…` hex. `amount` is a whole number in
 
 ## Quick start
 
-Needs [Rust](https://rustup.rs) (stable), an [Alchemy](https://www.alchemy.com) mainnet API key (free tier is enough), and [Claude Desktop](https://claude.ai/download).
+Needs an [Alchemy](https://www.alchemy.com) mainnet API key (free tier is enough) and [Claude Desktop](https://claude.ai/download). Building from source also needs [Rust](https://rustup.rs) (stable).
 
-**1. Build**
+**1. Get the binary** — either download it from [Releases](https://github.com/Lupowilk/t-rex-mcp/releases) (`t-rex-mcp-aarch64-apple-darwin.tar.gz` for Apple Silicon Macs, `t-rex-mcp-x86_64-unknown-linux-gnu.tar.gz` for Linux):
+```bash
+tar -xzf t-rex-mcp-aarch64-apple-darwin.tar.gz
+xattr -d com.apple.quarantine t-rex-mcp   # macOS only: the binary is unsigned
+```
+Or build from source:
 ```bash
 git clone https://github.com/Lupowilk/t-rex-mcp.git
 cd t-rex-mcp
 cargo build --release
 ```
-The binary lands at `target/release/t-rex-mcp`.
+The built binary lands at `target/release/t-rex-mcp`. Either way, note its **absolute** path for the next step.
 
 **2. Add to Claude Desktop** — edit `~/Library/Application Support/Claude/claude_desktop_config.json` and use the **absolute** path to that binary:
 ```json
 {
   "mcpServers": {
     "t-rex-mcp": {
-      "command": "/absolute/path/to/t-rex-mcp/target/release/t-rex-mcp",
+      "command": "/absolute/path/to/t-rex-mcp",
       "env": { "ALCHEMY_API_KEY": "your_key_here" }
     }
   }
