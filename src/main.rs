@@ -182,8 +182,8 @@ impl TRexServer {
     }
 
     #[tool(
-        description = "looks up a holder's ONCHAINID identity contract address in the token's Identity Registry."
-    )]
+            description = "Looks up a holder's ONCHAINID identity contract in the token's ERC-3643 Identity Registry. Returns an object with a registered boolean and an onchainid field: the identity contract address as a 0x-prefixed hex string when registered, or null when the holder has no identity registered. Registration means an identity contract is on file; it does not mean the holder's claims are valid or that a transfer would pass compliance."
+        )]
     pub async fn read_identity_registry(
         &self,
         identitydetails: Parameters<IdentityCheck>,
@@ -234,7 +234,9 @@ impl TRexServer {
         ))
     }
 
-    #[tool(description = "looks into the claim topics required by a token's IdentityRegistry")]
+    #[tool(
+        description = "Lists the claim topics a holder's ONCHAINID must carry to be eligible for a token, resolved via the token's ERC-3643 Identity Registry and its Claim Topics Registry. Returns an object with a topics array: claim topic IDs as decimal strings (uint256 values, kept as strings to survive JSON). An empty array means the token requires no claims. This lists which topics are required; it does not check whether any particular holder has them."
+    )]
     pub async fn list_claim_topics(
         &self,
         claimdetails: Parameters<ClaimTopics>,
