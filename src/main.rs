@@ -89,6 +89,27 @@ impl TRexServer {
         }
     }
 
+    pub async fn connect_provider(&self) -> Result<impl Provider,McpError> {
+        let alchemy_key = std::env::var("ALCHEMY_API_KEY").map_err(|e| {
+            McpError::internal_error(
+                format!("Server is not configured (ALCHEMY_API_KEY is missing): {e}"),
+                None,
+            )
+        })?;
+
+        let url = format!("https://eth-mainnet.g.alchemy.com/v2/{}", alchemy_key);
+
+        let provider_rpc = ProviderBuilder::new().connect(&url).await.map_err(|e| {
+            McpError::internal_error(
+                format!("Could not set up the Ethereum RPC client (invalid RPC URL): {e}"),
+                None,
+            )
+        })?;
+
+        Ok(provider_rpc)
+    }
+
+
     #[tool(description = "Ping-pong check for client")]
     pub async fn ping(&self) -> Result<CallToolResult, McpError> {
         Ok(CallToolResult::success(vec![ContentBlock::text("pong")]))
@@ -98,19 +119,9 @@ impl TRexServer {
         description = "Returns the current Ethereum mainnet block number as an object with a block_number field."
     )]
     pub async fn get_block_number(&self) -> Result<CallToolResult, McpError> {
-        // read env + Alchemy key
-        let alchemy_key = std::env::var("ALCHEMY_API_KEY")
-            .map_err(|e| McpError::internal_error(format!("missing ALCHEMY_API_KEY: {e}"), None))?;
+        let provider_rpc = self.connect_provider().await?;
 
-        let url = format!("https://eth-mainnet.g.alchemy.com/v2/{}", alchemy_key);
-
-        // import block
-        let provider = ProviderBuilder::new()
-            .connect(&url)
-            .await
-            .map_err(|e| McpError::internal_error(format!("Connection failure: {e}"), None))?;
-
-        let block_number = provider.get_block_number().await.map_err(|e| {
+        let block_number = provider_rpc.get_block_number().await.map_err(|e| {
             McpError::internal_error(format!("Failed to fetch block number: {e}"), None)
         })?;
 
@@ -154,26 +165,12 @@ impl TRexServer {
             )
         })?;
 
-        let alchemy_key = std::env::var("ALCHEMY_API_KEY").map_err(|e| {
-            McpError::internal_error(
-                format!("Server is not configured (ALCHEMY_API_KEY is missing): {e}"),
-                None,
-            )
-        })?;
+        let provider_rpc = self.connect_provider().await?;
 
-        let url = format!("https://eth-mainnet.g.alchemy.com/v2/{}", alchemy_key);
-
-        let provider = ProviderBuilder::new().connect(&url).await.map_err(|e| {
-            McpError::internal_error(
-                format!("Could not set up the Ethereum RPC client (invalid RPC URL): {e}"),
-                None,
-            )
-        })?;
-
-        let compliance_address = IToken::new(token_el, &provider).compliance().call().await
+        let compliance_address = IToken::new(token_el, &provider_rpc).compliance().call().await
             .map_err(|e| McpError::internal_error(format!("Could not read the token's compliance contract (compliance() call failed: token may not be ERC-3643, or the RPC/API key is unreachable): {e}"), None))?;
 
-        let compliance_contract_check = ICompliance::new(compliance_address, &provider).canTransfer(from_el, to_el, amount_el).call().await
+        let compliance_contract_check = ICompliance::new(compliance_address, &provider_rpc).canTransfer(from_el, to_el, amount_el).call().await
             .map_err(|e| McpError::internal_error(format!("Could not check transfer eligibility (compliance canTransfer call failed): {e}"), None))?;
 
         Ok(CallToolResult::structured(
@@ -202,26 +199,12 @@ impl TRexServer {
             )
         })?;
 
-        let alchemy_key = std::env::var("ALCHEMY_API_KEY").map_err(|e| {
-            McpError::internal_error(
-                format!("Server is not configured (ALCHEMY_API_KEY is missing): {e}"),
-                None,
-            )
-        })?;
+        let provider_rpc = self.connect_provider().await?;
 
-        let url = format!("https://eth-mainnet.g.alchemy.com/v2/{}", alchemy_key);
-
-        let provider = ProviderBuilder::new().connect(&url).await.map_err(|e| {
-            McpError::internal_error(
-                format!("Could not set up the Ethereum RPC client (invalid RPC URL): {e}"),
-                None,
-            )
-        })?;
-
-        let registry_address_call = IToken::new(onchainid_check_contract, &provider).identityRegistry().call().await
+        let registry_address_call = IToken::new(onchainid_check_contract, &provider_rpc).identityRegistry().call().await
             .map_err(|e| McpError::internal_error(format!("Could not read the token's identity registry address (identityRegistry() call failed: token may not be ERC-3643, or the RPC/API key is unreachable): {e}"), None))?;
 
-        let registry_identity_call = IIdentityRegistry::new(registry_address_call, &provider).identity(onchain_holder_check).call().await
+        let registry_identity_call = IIdentityRegistry::new(registry_address_call, &provider_rpc).identity(onchain_holder_check).call().await
             .map_err(|e| McpError::internal_error(format!("Could not read the holder's ONCHAINID (identity() call failed: identity registry call reverted, or the RPC/API key is unreachable): {e}"), None))?;
 
         if registry_identity_call == Address::ZERO {
@@ -248,29 +231,15 @@ impl TRexServer {
             )
         })?;
 
-        let alchemy_key = std::env::var("ALCHEMY_API_KEY").map_err(|e| {
-            McpError::internal_error(
-                format!("Server is not configured (ALCHEMY_API_KEY is missing): {e}"),
-                None,
-            )
-        })?;
+        let provider_rpc = self.connect_provider().await?;
 
-        let url = format!("https://eth-mainnet.g.alchemy.com/v2/{}", alchemy_key);
-
-        let provider = ProviderBuilder::new().connect(&url).await.map_err(|e| {
-            McpError::internal_error(
-                format!("Could not set up the Ethereum RPC client (invalid RPC URL): {e}"),
-                None,
-            )
-        })?;
-
-        let registry_address_call = IToken::new(token_address, &provider).identityRegistry().call().await
+        let registry_address_call = IToken::new(token_address, &provider_rpc).identityRegistry().call().await
             .map_err(|e| McpError::internal_error(format!("Could not read the token's identity registry address (identityRegistry() call failed: token may not be ERC-3643, or the RPC/API key is unreachable): {e}"), None))?;
 
-        let topics_registry_address = IIdentityRegistry::new(registry_address_call, &provider).topicsRegistry().call().await
+        let topics_registry_address = IIdentityRegistry::new(registry_address_call, &provider_rpc).topicsRegistry().call().await
             .map_err(|e| McpError::internal_error(format!("Could not read the claim topics registry address (topicsRegistry() call failed: identity registry call reverted, or the RPC/API key is unreachable): {e}"), None))?;
 
-        let read_topics_registry = IClaimTopicsRegistry::new(topics_registry_address, &provider).getClaimTopics().call().await
+        let read_topics_registry = IClaimTopicsRegistry::new(topics_registry_address, &provider_rpc).getClaimTopics().call().await
             .map_err(|e| McpError::internal_error(format!("Could not read the required claim topics (getClaimTopics() call failed: claim topics registry call reverted, or the RPC/API key is unreachable): {e}"), None))?;
 
         let topics: Vec<String> = read_topics_registry.iter().map(|t| t.to_string()).collect();
