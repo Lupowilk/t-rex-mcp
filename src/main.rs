@@ -19,6 +19,7 @@ sol! {
     contract IToken{
         function compliance() external view returns (address);
         function identityRegistry() external view returns (address);
+        function transfer(address _to, uint256 _amount) external returns (bool);
     }
 
     #[sol(rpc)]
@@ -138,41 +139,30 @@ impl TRexServer {
         tokendetails: Parameters<EligibilityCheck>,
     ) -> Result<CallToolResult, McpError> {
         let token_el = tokendetails.0.token.parse::<Address>().map_err(|e| {
-            McpError::invalid_params(
-                format!("Invalid token address (expected 0x-prefixed hex): {e}"),
-                None,
-            )
-        })?;
-
+            McpError::invalid_params(format!("Invalid token address (expected 0x-prefixed hex): {e}"),None,)})?;
         let from_el = tokendetails.0.from.parse::<Address>().map_err(|e| {
             McpError::invalid_params(
                 format!("Invalid sender address (expected 0x-prefixed hex): {e}"),
                 None,
             )
         })?;
-
         let to_el = tokendetails.0.to.parse::<Address>().map_err(|e| {
             McpError::invalid_params(
                 format!("Invalid recipient address (expected 0x-prefixed hex): {e}"),
                 None,
             )
         })?;
-
         let amount_el = tokendetails.0.amount.parse::<U256>().map_err(|e| {
             McpError::invalid_params(
                 format!("Invalid amount (expected a whole number in base units): {e}"),
                 None,
             )
         })?;
-
         let provider_rpc = self.connect_provider().await?;
-
         let compliance_address = IToken::new(token_el, &provider_rpc).compliance().call().await
             .map_err(|e| McpError::internal_error(format!("Could not read the token's compliance contract (compliance() call failed: token may not be ERC-3643, or the RPC/API key is unreachable): {e}"), None))?;
-
         let compliance_contract_check = ICompliance::new(compliance_address, &provider_rpc).canTransfer(from_el, to_el, amount_el).call().await
             .map_err(|e| McpError::internal_error(format!("Could not check transfer eligibility (compliance canTransfer call failed): {e}"), None))?;
-
         Ok(CallToolResult::structured(
             json!({ "can_transfer": compliance_contract_check }),
         ))
@@ -246,7 +236,16 @@ impl TRexServer {
 
         Ok(CallToolResult::structured(json!({"topics": topics })))
     }
+
+    #[tool(description = "Dry-runs a transfer without sending it and reports whether it would succeed, and which gate would block it.")]
+    pub async fn simulate_transfer(&self, tokendetails: Parameters<EligibilityCheck>,) -> Result<CallToolResult,McpError> {
+        todo!()
+    }
 }
+
+
+
+
 
 #[tool_handler]
 impl ServerHandler for TRexServer {
