@@ -239,7 +239,15 @@ impl TRexServer {
 
     #[tool(description = "Dry-runs a transfer without sending it and reports whether it would succeed, and which gate would block it.")]
     pub async fn simulate_transfer(&self, tokendetails: Parameters<EligibilityCheck>,) -> Result<CallToolResult,McpError> {
+        let token_el = tokendetails.0.token.parse::<Address>().map_err(|e| { McpError::invalid_params(format!("Invalid token address (expected 0x-prefixed hex): {e}"),None,)})?;
+        let from_el = tokendetails.0.from.parse::<Address>().map_err(|e| { McpError::invalid_params(format!("Invalid sender address (expected 0x-prefixed hex): {e}"),None,)})?;
+        let to_el = tokendetails.0.to.parse::<Address>().map_err(|e| {McpError::invalid_params(format!("Invalid recipient address (expected 0x-prefixed hex): {e}"),None,)})?;
+        let amount_el = tokendetails.0.amount.parse::<U256>().map_err(|e| {McpError::invalid_params(format!("Invalid amount (expected a whole number in base units): {e}"),None,)})?;
+
+        let provider_rpc = self.connect_provider().await?;
+
         todo!()
+
     }
 }
 
