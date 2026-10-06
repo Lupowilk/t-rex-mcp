@@ -13,6 +13,7 @@ use rmcp::{
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde_json::json;
+use tokio::sync::watch::error;
 
 sol! {
     #[sol(rpc)]
@@ -248,7 +249,10 @@ impl TRexServer {
 
         let tx_simulation = IToken::new(token_address, &provider_rpc).transfer(recipient_address, amount).from(sender_address).call().await;
 
-        todo!()
+       match tx_simulation {
+          Ok(_) => {Ok(CallToolResult::structured(json!({"would_succeed": true, "gate": null})))}
+          Err(error) => { todo!() }
+       }
 
     }
 }
