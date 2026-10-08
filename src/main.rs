@@ -235,7 +235,7 @@ impl TRexServer {
         Ok(CallToolResult::structured(json!({"topics": topics })))
     }
 
-    #[tool(description = "Dry-runs a transfer without sending it and reports whether it would succeed, and which gate would block it.")]
+    #[tool(description = "Dry-runs an ERC-3643 token transfer as if `from` sent it, without submitting anything, and reports whether the token's full transfer path would accept it: paused token, frozen wallets, sender balance, recipient identity verification and compliance. Returns an object with a would_succeed boolean and a gate field: null when the transfer would succeed, otherwise the token's own revert reason (e.g. 'wallet is frozen', 'Insufficient Balance', 'Transfer not possible'). 'Transfer not possible' does not say whether identity or compliance blocked it. Use this rather than check_token_eligibility to know whether a transfer would actually go through. Amount is in raw base units.")]
     pub async fn simulate_transfer(&self, tokendetails: Parameters<EligibilityCheck>,) -> Result<CallToolResult,McpError> {
         let token_address = tokendetails.0.token.parse::<Address>().map_err(|e| { McpError::invalid_params(format!("Invalid token address (expected 0x-prefixed hex): {e}"),None,)})?;
         let sender_address = tokendetails.0.from.parse::<Address>().map_err(|e| { McpError::invalid_params(format!("Invalid sender address (expected 0x-prefixed hex): {e}"),None,)})?;
