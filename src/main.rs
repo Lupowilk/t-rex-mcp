@@ -1,7 +1,5 @@
 use alloy::{
-    primitives::{Address, U256},
-    providers::{Provider, ProviderBuilder},
-    sol,
+    primitives::{Address, U256}, providers::{Provider, ProviderBuilder}, sol, sol_types::Revert,
 };
 use rmcp::{
     ErrorData as McpError, ServerHandler, ServiceExt,
@@ -19,6 +17,7 @@ sol! {
     contract IToken{
         function compliance() external view returns (address);
         function identityRegistry() external view returns (address);
+        function transfer(address _to, uint256 _amount) external returns (bool);
     }
 
     #[sol(rpc)]
@@ -138,41 +137,30 @@ impl TRexServer {
         tokendetails: Parameters<EligibilityCheck>,
     ) -> Result<CallToolResult, McpError> {
         let token_el = tokendetails.0.token.parse::<Address>().map_err(|e| {
-            McpError::invalid_params(
-                format!("Invalid token address (expected 0x-prefixed hex): {e}"),
-                None,
-            )
-        })?;
-
+            McpError::invalid_params(format!("Invalid token address (expected 0x-prefixed hex): {e}"),None,)})?;
         let from_el = tokendetails.0.from.parse::<Address>().map_err(|e| {
             McpError::invalid_params(
                 format!("Invalid sender address (expected 0x-prefixed hex): {e}"),
                 None,
             )
         })?;
-
         let to_el = tokendetails.0.to.parse::<Address>().map_err(|e| {
             McpError::invalid_params(
                 format!("Invalid recipient address (expected 0x-prefixed hex): {e}"),
                 None,
             )
         })?;
-
         let amount_el = tokendetails.0.amount.parse::<U256>().map_err(|e| {
             McpError::invalid_params(
                 format!("Invalid amount (expected a whole number in base units): {e}"),
                 None,
             )
         })?;
-
         let provider_rpc = self.connect_provider().await?;
-
         let compliance_address = IToken::new(token_el, &provider_rpc).compliance().call().await
             .map_err(|e| McpError::internal_error(format!("Could not read the token's compliance contract (compliance() call failed: token may not be ERC-3643, or the RPC/API key is unreachable): {e}"), None))?;
-
         let compliance_contract_check = ICompliance::new(compliance_address, &provider_rpc).canTransfer(from_el, to_el, amount_el).call().await
             .map_err(|e| McpError::internal_error(format!("Could not check transfer eligibility (compliance canTransfer call failed): {e}"), None))?;
-
         Ok(CallToolResult::structured(
             json!({ "can_transfer": compliance_contract_check }),
         ))
@@ -246,7 +234,30 @@ impl TRexServer {
 
         Ok(CallToolResult::structured(json!({"topics": topics })))
     }
+
+    #[tool(description = "Dry-runs an ERC-3643 token transfer as if `from` sent it, without submitting anything, and reports whether the token's full transfer path would accept it: paused token, frozen wallets, sender balance, recipient identity verification and compliance. Returns an object with a would_succeed boolean and a gate field: null when the transfer would succeed, otherwise the token's own revert reason (e.g. 'wallet is frozen', 'Insufficient Balance', 'Transfer not possible'). 'Transfer not possible' does not say whether identity or compliance blocked it. Use this rather than check_token_eligibility to know whether a transfer would actually go through. Amount is in raw base units.")]
+    pub async fn simulate_transfer(&self, tokendetails: Parameters<EligibilityCheck>,) -> Result<CallToolResult,McpError> {
+        let token_address = tokendetails.0.token.parse::<Address>().map_err(|e| { McpError::invalid_params(format!("Invalid token address (expected 0x-prefixed hex): {e}"),None,)})?;
+        let sender_address = tokendetails.0.from.parse::<Address>().map_err(|e| { McpError::invalid_params(format!("Invalid sender address (expected 0x-prefixed hex): {e}"),None,)})?;
+        let recipient_address = tokendetails.0.to.parse::<Address>().map_err(|e| {McpError::invalid_params(format!("Invalid recipient address (expected 0x-prefixed hex): {e}"),None,)})?;
+        let amount = tokendetails.0.amount.parse::<U256>().map_err(|e| {McpError::invalid_params(format!("Invalid amount (expected a whole number in base units): {e}"),None,)})?;
+
+        let provider_rpc = self.connect_provider().await?;
+
+        let tx_simulation = IToken::new(token_address, &provider_rpc).transfer(recipient_address, amount).from(sender_address).call().await;
+
+       match tx_simulation {
+          Ok(_) => {Ok(CallToolResult::structured(json!({"would_succeed": true, "gate": null})))}
+          Err(error) => if let Some(refusal_reason_msg) = error.as_decoded_error::<Revert>() { Ok(CallToolResult::structured(json!({"would_succeed": false, "gate": refusal_reason_msg.reason()}))) }
+                        else { Err(McpError::internal_error(format!("Could not simulate the transfer (no revert reason; RPC or API key may be unreachable): {error}"), None)) }
+       }
+
+    }
 }
+
+
+
+
 
 #[tool_handler]
 impl ServerHandler for TRexServer {
