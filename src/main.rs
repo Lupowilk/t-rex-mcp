@@ -1,7 +1,5 @@
 use alloy::{
-    primitives::{Address, U256},
-    providers::{Provider, ProviderBuilder},
-    sol,
+    primitives::{Address, U256}, providers::{Provider, ProviderBuilder}, sol, sol_types::Revert,
 };
 use rmcp::{
     ErrorData as McpError, ServerHandler, ServiceExt,
@@ -13,7 +11,6 @@ use rmcp::{
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde_json::json;
-use tokio::sync::watch::error;
 
 sol! {
     #[sol(rpc)]
@@ -251,7 +248,8 @@ impl TRexServer {
 
        match tx_simulation {
           Ok(_) => {Ok(CallToolResult::structured(json!({"would_succeed": true, "gate": null})))}
-          Err(error) => { todo!() }
+          Err(error) => if let Some(refusal_reason_msg) = error.as_decoded_error::<Revert>() { Ok(CallToolResult::structured(json!({"would_succeed": false, "gate": refusal_reason_msg.reason()}))) }
+                        else { Err(McpError::internal_error(format!("Could not simulate the transfer (no revert reason; RPC or API key may be unreachable): {error}"), None)) }
        }
 
     }
