@@ -18,12 +18,14 @@ Read-only. Ethereum mainnet only. stdio transport. MCP spec 2026-07-28 via rmcp 
 | `check_token_eligibility` | `token`, `from`, `to`, `amount` | `{"can_transfer": true}` | working |
 | `read_identity_registry` | `token`, `holder` | `{"registered": true, "onchainid": "0x7714…"}` or `{"registered": false, "onchainid": null}` | working |
 | `list_claim_topics` | `token` | `{"topics": ["10101010000101"]}` | working |
-| `simulate_transfer` | | | v0.2 |
+| `simulate_transfer` | `token`, `from`, `to`, `amount` | `{"would_succeed": true, "gate": null}` or `{"would_succeed": false, "gate": "Insufficient Balance"}` | working |
 | `query_transfer_restrictions` | | | v0.2 |
 
 All inputs are strings. Addresses are `0x…` hex. `amount` is a whole number in the token's smallest unit (no decimals applied). Results come back as `structuredContent`, a JSON object; claim topic IDs are strings.
 
-**`check_token_eligibility` caveat:** it asks only the token's compliance contract (`canTransfer`), and those rules vary by token. It does not check identity verification, frozen wallets or tokens, a paused token, or sender balance — so `can_transfer: true` means "compliance rules allow it", not "the transfer will succeed". The contract also cannot say *which* rule caused a `false`.
+**`check_token_eligibility` caveat:** it asks only the token's compliance contract (`canTransfer`), and those rules vary by token. It does not check identity verification, frozen wallets or tokens, a paused token, or sender balance — so `can_transfer: true` means "compliance rules allow it", not "the transfer will succeed". The contract also cannot say *which* rule caused a `false`. To check whether a transfer would actually go through, use `simulate_transfer`.
+
+**`simulate_transfer`:** dry-runs the token's own `transfer` as if `from` sent it; nothing is submitted. `gate` is the token's revert reason, passed through as-is. On BLABS these are `Pausable: paused`, `wallet is frozen`, `Insufficient Balance` and `Transfer not possible`; the last one covers both an unverified recipient and a compliance rejection, without saying which.
 
 ## Quick start
 
@@ -55,16 +57,19 @@ The built binary lands at `target/release/t-rex-mcp`. Either way, note its **abs
 ```
 If the file already has other servers, add `t-rex-mcp` inside the existing `mcpServers` object. The key is read from this `env` block, not from a `.env` file — pass the key only, not the full RPC URL.
 
-**3. Restart** — fully quit with **Cmd+Q** (closing the window is not enough), then reopen. The five tools appear in the tools menu. Repeat after every rebuild; a stale tool list looks exactly like a missing tool.
+**3. Restart** — fully quit with **Cmd+Q** (closing the window is not enough), then reopen. The six tools appear in the tools menu. Repeat after every rebuild; a stale tool list looks exactly like a missing tool.
 
 **4. Try it** — example token BLABS, a Tokeny T-REX deployment on mainnet:
 ```
 Token: 0x6fb975af85262ee9d0f7ce3db83172db8e4295b6
-Holder: 0xa9b0c51b01e79b5ceab77577f04d136edbbb3420
+Holder: 0xa9b0c51b01e79b5ceab77577f04d136edbbb3420   (registered, holds no BLABS)
+Holder: 0x0119b4399F3948d69b1101f678abfC0Ae49321eC   (holds BLABS)
 ```
 > What claim topics does token 0x6fb975af85262ee9d0f7ce3db83172db8e4295b6 require?
 
 > What is the ONCHAINID of holder 0xa9b0c51b01e79b5ceab77577f04d136edbbb3420 on that token?
+
+> Would a transfer of amount 1 from 0x0119b4399F3948d69b1101f678abfC0Ae49321eC to 0x000000000000000000000000000000000000dEaD go through on that token?
 
 ## Architecture
 ![check_token_eligibility dataflow](docs/architecture.svg)
